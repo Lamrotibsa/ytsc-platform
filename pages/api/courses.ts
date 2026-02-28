@@ -6,7 +6,9 @@ import Course from '../../models/Course'
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await dbConnect()
   console.log('Connected to database:', mongoose.connection.name)
+  if (mongoose.connection.db) {
   console.log('Collection names:', await mongoose.connection.db.listCollections().toArray())
+}
   const courses = await Course.find({})
   console.log('Number of courses found:', courses.length)
   if (courses.length > 0) {
