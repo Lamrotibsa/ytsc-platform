@@ -1,78 +1,83 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import { GetServerSideProps } from 'next'
+import Link from 'next/link'
+import dbConnect from '../lib/dbConnect'
+import Course from '../models/Course'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+interface CourseType {
+  _id: string
+  title: string
+  description: string
+  thumbnail?: string
+}
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+interface HomeProps {
+  courses: CourseType[]
+}
 
-export default function Home() {
+export default function Home({ courses }: HomeProps) {
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black`}
-    >
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the index.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="space-y-16">
+      {/* Hero Section */}
+      <section className="text-center py-16 bg-[#38424D] text-white rounded-lg">
+        <h1 className="text-5xl font-bold mb-4">Empowering Shareholders Through Knowledge</h1>
+        <p className="text-xl mb-8 max-w-2xl mx-auto">
+          Access exclusive training, resources, and courses designed for YTSC members.
+        </p>
+        <Link href="/courses" className="bg-[#F59E0B] px-6 py-3 rounded-lg text-lg font-semibold hover:bg-opacity-90">
+          Explore Courses
+        </Link>
+      </section>
+
+      {/* About Teaser */}
+      <section className="grid md:grid-cols-2 gap-8 items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-[#38424D] mb-4">About Yegara Trading</h2>
+          <p className="text-gray-700 mb-4">
+            Yegara Trading Share Company is a leader in social enterprise and technology,
+            dedicated to providing value to our shareholders through innovation and education.
           </p>
+          <Link href="/about" className="text-[#F59E0B] font-semibold hover:underline">
+            Learn more →
+          </Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs/pages/getting-started?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <div className="relative h-64 bg-gray-200 rounded-lg" />
+      </section>
+
+      {/* Dynamic Course Teaser */}
+      <section>
+        <h2 className="text-3xl font-bold text-[#38424D] mb-8 text-center">Featured Courses</h2>
+        {courses.length === 0 ? (
+          <p className="text-center text-gray-600">No courses available yet.</p>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6">
+            {courses.map(course => (
+              <div key={course._id} className="border rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+                <div className="h-40 bg-gray-300" />
+                <div className="p-4">
+                  <h3 className="font-bold text-lg">{course.title}</h3>
+                  <p className="text-gray-600 text-sm mt-2">{course.description}</p>
+                  <Link href={`/courses/${course._id}`} className="mt-4 inline-block text-[#F59E0B] font-semibold">
+                    View Course →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
-  );
+  )
+}
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  await dbConnect()
+  const courses = await Course.find({}).lean()
+  return {
+    props: {
+      courses: courses.map(course => ({
+        ...course,
+        _id: course._id.toString()
+      }))
+    }
+  }
 }
